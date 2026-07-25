@@ -970,39 +970,18 @@
       });
     })();
 
-    /* ── VISITOR PING (Discord via Cloudflare Worker) ──────────────
-       Sends a "visit" ping on page load and a "duration" ping when
-       the visitor leaves. Replace WORKER_URL below with your actual
-       Cloudflare Worker URL once it's deployed. */
-    (function () {
-      const WORKER_URL = "https://sitevisitping.dahalpramshu1.workers.dev/";
+(function () {
+  const WORKER_URL = "https://sitevisitping.dahalpramshu1.workers.dev/";
 
-      const startTime = Date.now();
-
-      fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "visit",
-          page: window.location.pathname,
-          referrer: document.referrer || "direct"
-        })
-      }).catch(() => {});
-
-      window.addEventListener("beforeunload", () => {
-        const timeSpentSeconds = Math.round((Date.now() - startTime) / 1000);
-        try {
-          navigator.sendBeacon(
-            WORKER_URL,
-            JSON.stringify({
-              type: "duration",
-              page: window.location.pathname,
-              seconds: timeSpentSeconds
-            })
-          );
-        } catch (e) {}
-      });
-    })();
+  fetch(WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      page: window.location.pathname,
+      referrer: document.referrer || "direct"
+    })
+  }).catch(() => {});
+})();  
   </script>
 </body>
 </html>
