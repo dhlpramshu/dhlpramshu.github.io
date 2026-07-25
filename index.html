@@ -973,15 +973,49 @@
 (function () {
   const WORKER_URL = "https://sitevisitping.dahalpramshu1.workers.dev/";
 
+  let token = sessionStorage.getItem("visitorToken");
+  if (!token) {
+    token = Math.random().toString(36).substring(2, 8).toUpperCase();
+    sessionStorage.setItem("visitorToken", token);
+  }
+
+  const startTime = Date.now();
+  let maxScrollPercent = 0;
+
+  function updateScrollDepth() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
+    if (pct > maxScrollPercent) maxScrollPercent = pct;
+  }
+  window.addEventListener("scroll", updateScrollDepth, { passive: true });
+
   fetch(WORKER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      type: "visit",
+      token: token,
       page: window.location.pathname,
-      referrer: document.referrer || "direct"
+      referrer: document.referrer || "direct",
+      localTime: new Date().toLocaleString()
     })
   }).catch(() => {});
-})();  
-  </script>
-</body>
-</html>
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      const timeSpentSeconds = Math.round((Date.now() - startTime) / 1000);
+      try {
+        navigator.sendBeacon(
+          WORKER_URL,
+          JSON.stringify({
+            type: "leave",
+            token: token,
+            seconds: timeSpentSeconds,
+            scrollPercent: maxScrollPercent
+          })
+        );
+      } catch (e) {}
+    }
+  });
+})();
